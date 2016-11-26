@@ -6,18 +6,10 @@ const fs = require('fs');
 const mkdirp = require('mkdirp');
 
 // routers
-function getTestingCount(files) {
+function getCount(files, query) {
   let count = 0;
   for(let file of files) {
-    if(file.indexOf('testing') >= 0) count ++
-  }
-  return count;
-}
-
-function getTrainingCount(files) {
-  let count = 0;
-  for(let file of files) {
-    if(file.indexOf('training') >= 0) count ++
+    if(file.indexOf(query) >= 0) count ++
   }
   return count;
 }
@@ -29,18 +21,16 @@ router.get('/', async (ctx, body) => {
 router.post('/pilot_study/:id', async (ctx, body) => {
   console.log(ctx.request.body);
   const id = ctx.params.id;
-  const {name, mode} = ctx.request.body;
+  const {name, mode, vt, dt} = ctx.request.body;
   const folder = `${__dirname}/pilot_study/${id}/${name}`;
   mkdirp.sync(folder);
   const files = fs.readdirSync(folder);
-  let count = 0;
 
-  if(mode == 'training') {
-    count = getTrainingCount(files);
-  } else if(mode == 'testing') {
-    count = getTestingCount(files);
-  }
-  let fname = `${mode}_${count+1}.json`
+
+  let searchQuery = `${mode}_${vt}_${dt}`;
+
+  let  count = getCount(files, searchQuery);
+  let fname = `${searchQuery}_${count+1}.json`
 
   fs.writeFileSync(`${folder}/${fname}`, JSON.stringify(ctx.request.body));
   return ctx.body = JSON.stringify({status: 'ok'});
