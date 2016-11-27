@@ -135,6 +135,7 @@ const analyzeStudy3 = () => {
       let rightCount = 0
       let wrongCount = 0
       let errorSum = 0
+      let posErrorSum = 0
       for(let test of _.groupBy(elem, 'mode').testing) {
         
         for(let rec of test.records) {
@@ -142,6 +143,7 @@ const analyzeStudy3 = () => {
             rightCount ++
           }
           else {
+            posErrorSum += Math.abs(rec.result - rec.quest)
             wrongCount ++
             if(rec.result > rec.quest) {
               errorSum = errorSum + ((((rec.result - rec.quest - 1) * (test.dt + test.vt)) + rec.segTime))
@@ -153,8 +155,9 @@ const analyzeStudy3 = () => {
         }
       }
       finalResult[key].accuracy = rightCount/40
-      finalResult[key].mean_error = errorSum/(40-rightCount)
-      finalResult[key].error_sum = errorSum
+      finalResult[key].time_mean_error = errorSum/(40-rightCount)
+      finalResult[key].time_sum_error = errorSum
+      finalResult[key].pos_mean_error = posErrorSum/40
 
     })
 
@@ -166,6 +169,96 @@ const analyzeStudy3 = () => {
   return study
 }
 
-analyzeStudy1()
-analyzeStudy2()
-analyzeStudy3()
+function analyzeStudy(folder, groupParam, testNum) {
+  let roles = fs.readdirSync(folder)
+  let study = {};
+
+  for(let role of roles) {
+    let files = fs.readdirSync(`${folder}/${role}`) 
+    let dataSets = []
+    for(let file of files) {
+      let data = fs.readFileSync(`${folder}/${role}/${file}`).toString()
+      data = JSON.parse(data)
+      dataSets.push(data)
+    }
+
+    let classifiedDatas = _.groupBy(dataSets, groupParam)
+
+    let finalResult = {}
+    _.each(classifiedDatas, function(elem, key) {
+      finalResult[key] = {}
+      let rightCount = 0
+      let wrongCount = 0
+      let errorSum = 0
+      let posErrorSum = 0
+
+      //count 0~3 stats
+      let first4RightCount = 0
+      let first4PosErrorSum = 0
+      let first4ErrorSum = 0
+
+      for(let test of _.groupBy(elem, 'mode').testing) {
+        
+        for(let rec of test.records) {
+          if(rec.result == rec.quest) {
+            rightCount ++
+
+            if(rec.quest < 4) {
+              first4RightCount ++
+            }
+          }
+          else {
+            posErrorSum += Math.abs(rec.result - rec.quest)
+
+            if(rec.quest < 4) {
+              first4PosErrorSum += Math.abs(rec.result - rec.quest)
+            }
+
+            wrongCount ++
+            if(rec.result > rec.quest) {
+              errorSum = errorSum + ((((rec.result - rec.quest - 1) * (test.dt + test.vt)) + rec.segTime))
+              if(rec.quest < 4) {
+                first4ErrorSum += ((((rec.result - rec.quest - 1) * (test.dt + test.vt)) + rec.segTime))
+              }
+            }
+            else if(rec.result < rec.quest) {
+              errorSum = errorSum + Math.abs((test.dt + test.vt) - rec.segTime + Math.abs(rec.quest - rec.result - 1) * (test.dt + test.vt))
+
+              if(rec.quest < 4) {
+                first4ErrorSum += Math.abs((test.dt + test.vt) - rec.segTime + Math.abs(rec.quest - rec.result - 1) * (test.dt + test.vt))
+
+              }
+            }
+          }
+        }
+      }
+      finalResult[key].accuracy = rightCount/testNum
+      finalResult[key].time_mean_error = errorSum/(testNum-rightCount)
+      finalResult[key].pos_mean_error = posErrorSum/testNum
+
+      finalResult[key].first_4_accuracy = first4RightCount/(testNum*0.4)
+      finalResult[key].first_4_time_mean_error = first4ErrorSum/((testNum*0.4)-first4RightCount)
+      finalResult[key].first_4_pos_mean_error = first4PosErrorSum/(testNum*0.4)
+
+    })
+
+    console.log(finalResult)
+
+    study[role] = finalResult
+  }
+
+  return study
+}
+
+// let s1 = analyzeStudy1()
+// let s2 = analyzeStudy2()
+
+
+let s3 = analyzeStudy(folderS3, 'dt', 40)
+let s2 = analyzeStudy(folderS2, 'dt', 40)
+let s1 = analyzeStudy(folderS1, 'vt', 40)
+
+// console.log(s1)
+// console.log(s2)
+console.log(s3)
+
