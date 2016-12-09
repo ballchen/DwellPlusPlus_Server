@@ -191,21 +191,38 @@ function analyzeStudy(folder, groupParam, testNum) {
       let wrongCount = 0
       let errorSum = 0
       let posErrorSum = 0
+      let posErrors = [];
+      let posErrorFirst4 = [];
 
       //count 0~3 stats
       let first4RightCount = 0
       let first4PosErrorSum = 0
       let first4ErrorSum = 0
 
+      //study1 segtime
+      let study1SegTimeSum = 0;
+
       for(let test of _.groupBy(elem, 'mode').testing) {
         
         for(let rec of test.records) {
+          posErrors.push((rec.result - rec.quest))
+
+
+          if(rec.quest < 4) {
+            posErrorFirst4.push((rec.result - rec.quest))
+          }
+
           if(rec.result == rec.quest) {
             rightCount ++
 
             if(rec.quest < 4) {
               first4RightCount ++
             }
+
+            if(rec.quest != 0) {
+              study1SegTimeSum += rec.segTime
+            }
+            
           }
           else {
             posErrorSum += Math.abs(rec.result - rec.quest)
@@ -240,6 +257,10 @@ function analyzeStudy(folder, groupParam, testNum) {
       finalResult[key].first_4_time_mean_error = first4ErrorSum/((testNum*0.4)-first4RightCount)
       finalResult[key].first_4_pos_mean_error = first4PosErrorSum/(testNum*0.4)
 
+      finalResult[key].mean_segment_time = study1SegTimeSum/(testNum-4)
+      finalResult[key].every_pos_error = posErrors
+      finalResult[key].every_pos_error_first_four = posErrorFirst4
+
     })
 
     console.log(finalResult)
@@ -250,15 +271,104 @@ function analyzeStudy(folder, groupParam, testNum) {
   return study
 }
 
+
+function displayStudy1(folder, groupParam, testNum) {
+  let roles = fs.readdirSync(folder)
+  let study = {};
+
+  for(let role of roles) {
+    let files = fs.readdirSync(`${folder}/${role}`) 
+    let dataSets = []
+    for(let file of files) {
+      let data = fs.readFileSync(`${folder}/${role}/${file}`).toString()
+      data = JSON.parse(data)
+      dataSets.push(data)
+    }
+
+    let classifiedDatas = _.groupBy(dataSets, groupParam)
+
+    let finalResult = {}
+    _.each(classifiedDatas, function(elem, key) {
+      finalResult[key] = {}
+
+      //study1 segtime
+      let study1SegTimeSum = 0;
+      let study1SegTime = [];
+
+      for(let test of _.groupBy(elem, 'mode').testing) {
+        
+        for(let rec of test.records) {
+          if(rec.quest != 0 && rec.quest == rec.result) {
+            study1SegTime.push(rec.segTime)
+          }
+        }
+      }
+      finalResult[key].segment_times = study1SegTime;
+
+
+    })
+
+    study[role] = finalResult
+  }
+
+  return study
+}
+
+function displayStudy2(folder, groupParam, testNum) {
+  let roles = fs.readdirSync(folder)
+  let study = {};
+
+  for(let role of roles) {
+    let files = fs.readdirSync(`${folder}/${role}`) 
+    let dataSets = []
+    for(let file of files) {
+      let data = fs.readFileSync(`${folder}/${role}/${file}`).toString()
+      data = JSON.parse(data)
+      dataSets.push(data)
+    }
+
+    let classifiedDatas = _.groupBy(dataSets, groupParam)
+
+    let finalResult = {}
+    _.each(classifiedDatas, function(elem, key) {
+      finalResult[key] = {}
+
+      //study1 segtime
+      let study1SegTimeSum = 0;
+      let study1SegTime = [];
+      let study2EveryTime = {};
+
+      for(let test of _.groupBy(elem, 'mode').testing) {
+        for(let rec of test.records) {
+            if(!study2EveryTime[rec.quest]) study2EveryTime[rec.quest] = [];
+
+            study2EveryTime[rec.quest].push((rec.result == rec.quest) ? 'O' : 'X')
+        }
+      }
+      finalResult[key] = study2EveryTime;
+
+
+    })
+
+    study[role] = finalResult
+  }
+
+  return study
+}
+
+exports.displayStudy1 = displayStudy1;
+exports.displayStudy2 = displayStudy2;
 // let s1 = analyzeStudy1()
 // let s2 = analyzeStudy2()
 
 
-let s3 = analyzeStudy(folderS3, 'dt', 40)
-let s2 = analyzeStudy(folderS2, 'dt', 40)
-let s1 = analyzeStudy(folderS1, 'vt', 40)
+// let s3 = analyzeStudy(folderS3, 'dt', 40)
+// let s2 = analyzeStudy(folderS2, 'vt', 40)
+// let s1 = analyzeStudy(folderS1, 'dt', 40)
 
 // console.log(s1)
-// console.log(s2)
-console.log(s3)
+// // console.log(s2)
+// // console.log(s3)
+
+exports.analyzeStudy = analyzeStudy;
 
