@@ -5,3 +5,4 @@ function Shuffle(o) {
 
 let a = Shuffle([200, 150, 130, 110, 90])
 console.log(a)
+
