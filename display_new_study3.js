@@ -6,6 +6,8 @@ const folderFormalS3 = `${__dirname}/study/3`
 
 const names = fs.readdirSync(folderFormalS3);
 
+console.log(names)
+
 
 
 function getStat(finger) {
@@ -86,12 +88,10 @@ function getStat(finger) {
 
 
 	for (let key of Object.keys(resultObj)) {
+		console.log('yo')
 		fs.writeFileSync(`result_3_blockAccu_${finger}_${key}.txt`, `0~3\n${resultObj[key]}\n\ntotal\n${resultObj2[key]}\neach\n${resultObjQuest[key]}\nfirst\n${resultObjFirstTry[key]}`)
 	}
 }
 
 
-
-
-getStat('index')
-getStat('thumb')
+exports.getStat = getStat;

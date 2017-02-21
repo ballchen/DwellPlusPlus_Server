@@ -96,7 +96,22 @@ router.post('/study/3', async (ctx, body) => {
   return ctx.body = JSON.stringify({status: 'ok', count: count+1});
 })
 
+router.get('/result/study3', async (ctx, body) => {
+  require('./display_new_study3').getStat('index')
+  require('./display_new_study3').getStat('thumb')
+  let rbody = ''
 
+  const allresult = fs.readdirSync(`./`).filter((f) => {return f.substr(-4)==='.txt'})
+
+  for(let result of allresult) {
+    rbody += `${result}\n`
+    rbody += fs.readFileSync(`./${result}`).toString();
+    rbody += `\n`
+  }
+
+  return ctx.body = rbody
+
+})
 
 router.get('/results', async (ctx, body) => {
   let result = {};
@@ -150,6 +165,32 @@ router.get('/study2/progress/:name', async (ctx, body) => {
 
 
 })
+
+router.get('/study3/progress/:name', async (ctx, body) => {
+  const name = ctx.params.name;
+  const folder = `${__dirname}/study/3/${name}/`;
+  try {
+      const fingers = fs.readdirSync(folder);
+    if(!fingers) {
+      return ctx.body = [];
+    }
+    let result = {};
+
+    for(let f of fingers) {
+      let datas = fs.readdirSync(`${folder}/${f}`) 
+      
+      result[f] = datas;
+      
+    }
+
+    return ctx.body = result;
+  } catch(e) {
+    return ctx.body = [];
+  }
+
+
+})
+
 
 
 router.get('/results/study2', async (ctx, body) => {
