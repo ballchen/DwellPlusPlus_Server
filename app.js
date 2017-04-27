@@ -96,7 +96,26 @@ router.post('/study/3', async (ctx, body) => {
   return ctx.body = JSON.stringify({status: 'ok', count: count+1});
 })
 
+router.post('/study/4', async (ctx, body) => {
+  console.log(ctx.request.body);
+  const id = 4;
+  const {name, finger, mode, vt, dt} = ctx.request.body;
+  const folder = `${__dirname}/study/${id}/${name}/${finger}`;
+  mkdirp.sync(folder);
+  const files = fs.readdirSync(folder);
+
+  let searchQuery = `${mode}_${vt}_${dt}`;
+
+  let  count = getCount(files, searchQuery);
+  let fname = `${searchQuery}_${count+1}.json`
+
+  fs.writeFileSync(`${folder}/${fname}`, JSON.stringify(ctx.request.body));
+  return ctx.body = JSON.stringify({status: 'ok', count: count+1});
+})
+
 router.get('/result/study3', async (ctx, body) => {
+  require('./display_new_study2').getStat('index')
+  require('./display_new_study2').getStat('thumb')
   require('./display_new_study3').getStat('index')
   require('./display_new_study3').getStat('thumb')
   let rbody = ''
@@ -112,6 +131,24 @@ router.get('/result/study3', async (ctx, body) => {
   return ctx.body = rbody
 
 })
+
+router.get('/result/study4', async (ctx, body) => {
+  require('./display_new_study_3Makey').getStat('index')
+
+  let rbody = ''
+
+  const allresult = fs.readdirSync(`./`).filter((f) => {return f.substr(-4)==='.txt'})
+
+  for(let result of allresult) {
+    rbody += `${result}\n`
+    rbody += fs.readFileSync(`./${result}`).toString();
+    rbody += `\n`
+  }
+
+  return ctx.body = rbody
+
+})
+
 
 router.get('/results', async (ctx, body) => {
   let result = {};
@@ -169,6 +206,31 @@ router.get('/study2/progress/:name', async (ctx, body) => {
 router.get('/study3/progress/:name', async (ctx, body) => {
   const name = ctx.params.name;
   const folder = `${__dirname}/study/3/${name}/`;
+  try {
+      const fingers = fs.readdirSync(folder);
+    if(!fingers) {
+      return ctx.body = [];
+    }
+    let result = {};
+
+    for(let f of fingers) {
+      let datas = fs.readdirSync(`${folder}/${f}`) 
+      
+      result[f] = datas;
+      
+    }
+
+    return ctx.body = result;
+  } catch(e) {
+    return ctx.body = [];
+  }
+
+
+})
+
+router.get('/study4/progress/:name', async (ctx, body) => {
+  const name = ctx.params.name;
+  const folder = `${__dirname}/study/4/${name}/`;
   try {
       const fingers = fs.readdirSync(folder);
     if(!fingers) {
